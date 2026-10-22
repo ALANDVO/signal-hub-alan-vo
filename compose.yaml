@@ -1,0 +1,109 @@
+# Docker Compose for signal-hub-alan-vo
+
+services:
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: signal-hub-postgres
+    environment:
+      POSTGRES_DB: signal_hub
+      POSTGRES_USER: signal_hub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U signal_hub -d signal_hub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - signal-hub-network
+
+  # Keycloak for OIDC authentication
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: signal-hub-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-changeme}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-changeme}
+    volumes:
+      - ./keycloak/realm-import.json:/opt/keycloak/data/import/realm-import.json:ro
+      - keycloak_data:/opt/keycloak/data
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    networks:
+      - signal-hub-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: signal-hub-backend
+    environment:
+      DATABASE_URL: postgresql+asyncpg://signal_hub:${POSTGRES_PASSWORD:-changeme}@postgres:5432/signal_hub
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_REALM: signal-hub
+      KEYCLOAK_CLIENT_ID: signal-hub-backend
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-}
+      CORS_ORIGINS: '["http://localhost:5173","http://127.0.0.1:5173","http://localhost:80"]'
+      DEBUG: ${DEBUG:-false}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai-compatible}
+      LLM_MODEL: ${LLM_MODEL:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+    volumes:
+      - ./backend:/app:ro
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/api/v1/health', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - signal-hub-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: signal-hub-frontend
+    ports:
+      - "127.0.0.1:80:80"
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - signal-hub-network
+
+volumes:
+  postgres_data:
+  keycloak_data:
+
+networks:
+  signal-hub-network:
+    driver: bridge
