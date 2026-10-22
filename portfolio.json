@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "name": "signal-hub-alan-vo",
+  "owner": "ALANDVO",
+  "email": "alanvo@gmail.com",
+  "domain": "AI/ML developer tools",
+  "summary": "Work in progress: signal-hub-alan-vo",
+  "workflows": [
+    "Analyze PHP issue reports to classify failure types (JIT segfault, GC threshold, fork safety, array_unique, LDAP cleanup) with reproduction hints",
+    "Submit PHP code snippets for isolated sandbox execution and segfault detection",
+    "Automated git bisect to identify regression-introducing commits in php-src"
+  ],
+  "auth": "oidc-keycloak-saml-broker",
+  "llm_providers": [
+    "openai-compatible",
+    "anthropic",
+    "gemini",
+    "ollama"
+  ],
+  "status": "work-in-progress"
+}

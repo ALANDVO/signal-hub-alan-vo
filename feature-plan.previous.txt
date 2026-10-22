@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "current_feature": "php-issue-analysis",
+  "features": [
+    {
+      "status": "done",
+      "title": "Project skeleton with FastAPI backend and React frontend",
+      "acceptance": [
+        "FastAPI app runs with health endpoint",
+        "React + TypeScript + Vite frontend builds",
+        "Docker compose brings up backend, frontend, Keycloak, PostgreSQL",
+        "CI workflow runs backend tests, frontend typecheck/build/test",
+        "portfolio.json, README, LICENSE, CHANGELOG, .gitignore, .env.example present"
+      ],
+      "implementation": [
+        "backend/app/main.py",
+        "backend/requirements.txt",
+        "backend/Dockerfile",
+        "frontend/package.json",
+        "frontend/Dockerfile",
+        "compose.yaml",
+        ".github/workflows/ci.yml",
+        "portfolio.json",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md",
+        "pyproject.toml",
+        ".gitignore",
+        ".env.example"
+      ],
+      "tests": [
+        "backend/tests/test_health.py"
+      ]
+    },
+    {
+      "status": "in_progress",
+      "title": "PHP issue analysis engine with JIT segfault detection",
+      "acceptance": [
+        "API endpoint to analyze PHP issue reports and classify failure types",
+        "Deterministic offline classification of segfault patterns (JIT, GC, fork, ldap, array_unique)",
+        "Frontend dashboard showing issue patterns and reproduction hints"
+      ],
+      "implementation": [
+        "backend/app/services/issue_analyzer.py",
+        "backend/app/api/issues.py",
+        "backend/tests/test_issue_analyzer.py",
+        "frontend/src/components/IssueDashboard.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_issue_analyzer.py",
+        "frontend/src/components/IssueDashboard.test.tsx"
+      ]
+    },
+    {
+      "id": "reproduction-runner",
+      "title": "Automated reproduction runner for PHP bugs",
+      "status": "planned",
+      "acceptance": [
+        "API to submit PHP code snippets for isolated execution",
+        "Sandbox execution with timeout and resource limits",
+        "Results capture: stdout, stderr, exit code, segfault detection"
+      ],
+      "implementation": [
+        "backend/app/services/reproduction_runner.py",
+        "backend/app/api/reproduction.py",
+        "backend/tests/test_reproduction_runner.py",
+        "frontend/src/components/ReproductionRunner.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_reproduction_runner.py"
+      ]
+    },
+    {
+      "id": "bisect-automation",
+      "title": "Git bisect automation for PHP version regression detection",
+      "status": "planned",
+      "acceptance": [
+        "API to trigger automated bisect between PHP versions",
+        "Integration with php-src repository for version testing",
+        "Results visualization showing regression introduction commit"
+      ],
+      "implementation": [
+        "backend/app/services/bisect_runner.py",
+        "backend/app/api/bisect.py",
+        "backend/tests/test_bisect_runner.py",
+        "frontend/src/components/BisectDashboard.tsx"
+      ],
+      "tests": [
+        "backend/tests/test_bisect_runner.py"
+      ]
+    },
+    {
+      "id": "auth-oidc",
+      "title": "OIDC authentication with Keycloak",
+      "status": "planned",
+      "acceptance": [
+        "Keycloak realm import with viewer/operator/admin roles",
+        "Backend session management with HttpOnly cookies + CSRF",
+        "Frontend login/callback flow with PKCE",
+        "Protected API endpoints with role-based authorization"
+      ],
+      "implementation": [
+        "backend/app/core/auth.py",
+        "backend/app/api/auth.py",
+        "keycloak/realm-import.json",
+        "frontend/src/components/Login.tsx",
+        "frontend/src/auth/*.ts"
+      ],
+      "tests": [
+        "backend/tests/test_auth.py",
+        "frontend/src/auth/auth.test.tsx"
+      ]
+    }
+  ]
+}
