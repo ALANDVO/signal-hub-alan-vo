@@ -1,7 +1,22 @@
 # Changelog
 
-## 1.0.0 — work-in-progress checkpoint
+## 1.1.0 — work-in-progress checkpoint
 
+Partial code published for continued development. Known issues: STATUS.md.
+
+## 1.0.0 — work-in-progress checkpoint
+## [1.0.1] - 2026-10-30
+
+### Fixed
+- Fixed mypy type error in `backend/app/models/database.py`: corrected `get_db()` return type from `AsyncSession` to `AsyncGenerator[AsyncSession, None]` with proper import
+
+### Verified
+- mypy: passes with no errors
+- Backend pytest: 9 tests pass
+- Frontend vitest: 6 tests pass
+- Frontend build (tsc + vite): passes
+
+## 1.0.0 — work-in-progress checkpoint
 Partial code published for continued development. Known issues: STATUS.md.
 
 All notable changes to this project will be documented in this file.
