@@ -1,13 +1,57 @@
 {
   "schema_version": 1,
-  "current_feature": "continue-implementation",
+  "current_feature": "fix-mypy-type-annotation",
   "features": [
     {
-      "id": "continue-implementation",
-      "title": "Continue implementation and resolve known failures",
-      "status": "in_progress",
+      "id": "fix-mypy-type-annotation",
+      "title": "Fixed mypy type error in database async generator return type",
+      "status": "done",
       "acceptance": [
-        "Run checks, fix failures, and implement the next planned feature"
+        "mypy passes with no errors",
+        "All backend tests pass"
+      ],
+      "implementation": [
+        "backend/app/models/database.py"
+      ],
+      "tests": [
+        "backend/tests/test_health.py"
+      ]
+    },
+    {
+      "id": "add-issue-history-api",
+      "title": "Add issue analysis history API",
+      "status": "planned",
+      "acceptance": [
+        "POST /api/v1/issues/analyze stores analysis in database",
+        "GET /api/v1/issues/history returns paginated history",
+        "GET /api/v1/issues/history/{id} returns single analysis",
+        "Database migration for issue_analysis table"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "add-llm-advisory-analysis",
+      "title": "Add opt-in LLM advisory analysis",
+      "status": "planned",
+      "acceptance": [
+        "New endpoint POST /api/v1/issues/analyze-with-llm",
+        "LLM response includes advisory disclaimer",
+        "Provider errors surface cleanly (no fabricated success)",
+        "Config via LLM_API_KEY, LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL"
+      ],
+      "implementation": [],
+      "tests": []
+    },
+    {
+      "id": "add-reproduction-runner",
+      "title": "Add automated reproduction runner",
+      "status": "planned",
+      "acceptance": [
+        "POST /api/v1/reproduction/run executes PHP in sandbox",
+        "Timeout and memory limits enforced",
+        "Output captured and returned",
+        "Security: non-root container, no network, read-only filesystem"
       ],
       "implementation": [],
       "tests": []

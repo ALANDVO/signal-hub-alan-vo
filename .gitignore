@@ -42,3 +42,4 @@ Thumbs.db
 # Test artifacts
 *.sqlite3
 test.db
+venv/
