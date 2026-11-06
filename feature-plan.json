@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "fix-mypy-type-annotation",
+  "current_feature": "add-issue-history-api",
   "features": [
     {
       "id": "fix-mypy-type-annotation",
@@ -20,15 +20,21 @@
     {
       "id": "add-issue-history-api",
       "title": "Add issue analysis history API",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "POST /api/v1/issues/analyze stores analysis in database",
         "GET /api/v1/issues/history returns paginated history",
         "GET /api/v1/issues/history/{id} returns single analysis",
         "Database migration for issue_analysis table"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/models/database.py",
+        "backend/app/api/issues.py",
+        "backend/app/main.py"
+      ],
+      "tests": [
+        "backend/tests/test_health.py"
+      ]
     },
     {
       "id": "add-llm-advisory-analysis",

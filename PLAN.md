@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-fix-mypy-type-annotation
+add-issue-history-api
 
 ## Roadmap
 
@@ -22,13 +22,17 @@ Tests: `backend/tests/test_health.py`
 
 ### add-issue-history-api — Add issue analysis history API
 
-Status: planned
+Status: done
 
 Acceptance:
 - POST /api/v1/issues/analyze stores analysis in database
 - GET /api/v1/issues/history returns paginated history
 - GET /api/v1/issues/history/{id} returns single analysis
 - Database migration for issue_analysis table
+
+Implementation: `backend/app/models/database.py`, `backend/app/api/issues.py`, `backend/app/main.py`
+
+Tests: `backend/tests/test_health.py`
 
 ### add-llm-advisory-analysis — Add opt-in LLM advisory analysis
 
