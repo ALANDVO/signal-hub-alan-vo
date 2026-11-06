@@ -1,9 +1,15 @@
-"""Issues API endpoints - placeholder for issue analysis."""
+"""Issues API endpoints for PHP issue analysis and history."""
 
-from fastapi import APIRouter
+import json
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from typing import List, Optional
 from enum import Enum
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, desc
+from sqlalchemy.orm import selectinload
+
+from app.models.database import get_db, IssueAnalysis as IssueAnalysisModel
 
 router = APIRouter()
 
@@ -28,6 +34,7 @@ class IssueAnalysisRequest(BaseModel):
 
 class IssueAnalysisResponse(BaseModel):
     """Response with classified issue type and hints."""
+    id: Optional[int] = None
     issue_type: IssueType
     confidence: float
     reproduction_hints: List[str]
@@ -35,12 +42,10 @@ class IssueAnalysisResponse(BaseModel):
 
 
 @router.post("/issues/analyze", response_model=IssueAnalysisResponse, tags=["issues"])
-async def analyze_issue(request: IssueAnalysisRequest):
+async def analyze_issue(request: IssueAnalysisRequest, db: AsyncSession = Depends(get_db)):
     """
-    Analyze a PHP issue report and classify the failure type.
-    
-    Uses deterministic pattern matching on issue title/body to identify
-    known PHP interpreter bug categories.
+    Analyze a PHP issue report and classify the issue type.
+    Stores the analysis in history.
     """
     # Deterministic classification based on keywords
     text = (request.title + " " + request.body).lower()
@@ -53,44 +58,44 @@ async def analyze_issue(request: IssueAnalysisRequest):
     # LDAP cleanup segfault - check first (most specific terms)
     if any(kw in text for kw in ["ldap_bind", "engineremove", "enginelistcleanup", "curl_global_cleanup", "ossl_cleanup"]):
         issue_type = IssueType.LDAP_CLEANUP
-        confidence = 0.85
+        confidence = 0.95
         reproduction_hints = [
-            "Test: ldap_connect + ldap_bind with invalid credentials",
-            "Check OpenSSL engine cleanup order",
-            "Test on PHP 7.4 and 8.0",
+            "Test with PHP 8.2+ and OpenLDAP",
+            "Check for use-after-free in engine list cleanup",
+            "Verify SSL/TLS connection cleanup order",
         ]
         related_issues = [8620]
     
     # array_unique SORT_REGULAR bug
     elif any(kw in text for kw in ["array_unique", "sort_regular", "duplicate", "non-transitive", "zendi_smart_strcmp"]):
         issue_type = IssueType.ARRAY_UNIQUE
-        confidence = 0.95
+        confidence = 0.90
         reproduction_hints = [
-            "Test: array_unique(['5', '10', '5', '3A', '5'], SORT_REGULAR)",
-            "Compare with SORT_STRING behavior",
-            "Check for mixed numeric/non-numeric strings",
+            "Test array_unique with SORT_REGULAR flag",
+            "Compare string vs integer key handling",
+            "Check for non-transitive comparison behavior",
         ]
         related_issues = [20262]
     
     # Fork safety (macOS)
     elif any(kw in text for kw in ["fork", "objc_initializeafterforkerror", "nsplaceholderdate", "macos", "sigabrt"]):
         issue_type = IssueType.FORK_SAFETY
-        confidence = 0.90
+        confidence = 0.88
         reproduction_hints = [
-            "Test on macOS 13.5+",
-            "Use php-fpm with multiple workers",
-            "Set OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES as workaround",
+            "Test on macOS with fork()",
+            "Set OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES",
+            "Check for NSPlaceholderDate initialization after fork",
         ]
         related_issues = [11818]
     
     # GC threshold performance
     elif any(kw in text for kw in ["gc_threshold", "gc performance", "phpunit slow", "garbage collection"]):
         issue_type = IssueType.GC_THRESHOLD
-        confidence = 0.80
+        confidence = 0.85
         reproduction_hints = [
-            "Run large test suite with many objects",
-            "Compare PHP 8.1.9 vs 8.1.10+",
-            "Monitor GC cycles with gc_status()",
+            "Run phpunit test suite with gc_collect_cycles()",
+            "Monitor GC threshold values",
+            "Test with GC_DISABLE=1",
         ]
         related_issues = [9993]
     
@@ -105,11 +110,86 @@ async def analyze_issue(request: IssueAnalysisRequest):
         ]
         related_issues = [7817]
     
+    # Store in history first to get the ID
+    analysis_record = IssueAnalysisModel(
+        issue_type=issue_type.value,
+        confidence=confidence,
+        title=request.title,
+        body=request.body,
+        php_version=request.php_version,
+        os=request.os,
+        reproduction_hints=json.dumps(reproduction_hints),
+        related_issues=json.dumps(related_issues),
+    )
+    db.add(analysis_record)
+    await db.commit()
+    await db.refresh(analysis_record)
+    
     return IssueAnalysisResponse(
+        id=analysis_record.id,
         issue_type=issue_type,
         confidence=confidence,
         reproduction_hints=reproduction_hints,
         related_issues=related_issues,
+    )
+
+
+@router.get("/issues/history", response_model=List[IssueAnalysisResponse], tags=["issues"])
+async def get_issue_history(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+    issue_type: Optional[str] = Query(None, description="Filter by issue type"),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get paginated issue analysis history.
+    """
+    query = select(IssueAnalysisModel).order_by(desc(IssueAnalysisModel.created_at))
+    
+    if issue_type:
+        query = query.where(IssueAnalysisModel.issue_type == issue_type)
+    
+    # Apply pagination
+    offset = (page - 1) * page_size
+    query = query.offset(offset).limit(page_size)
+    
+    result = await db.execute(query)
+    records = result.scalars().all()
+    
+    return [
+        IssueAnalysisResponse(
+            id=record.id,
+            issue_type=IssueType(record.issue_type),
+            confidence=record.confidence,
+            reproduction_hints=json.loads(record.reproduction_hints),
+            related_issues=json.loads(record.related_issues),
+        )
+        for record in records
+    ]
+
+
+@router.get("/issues/history/{analysis_id}", response_model=IssueAnalysisResponse, tags=["issues"])
+async def get_issue_history_by_id(
+    analysis_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get a single issue analysis by ID.
+    """
+    result = await db.execute(
+        select(IssueAnalysisModel).where(IssueAnalysisModel.id == analysis_id)
+    )
+    record = result.scalar_one_or_none()
+    
+    if not record:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    
+    return IssueAnalysisResponse(
+        id=record.id,
+        issue_type=IssueType(record.issue_type),
+        confidence=record.confidence,
+        reproduction_hints=json.loads(record.reproduction_hints),
+        related_issues=json.loads(record.related_issues),
     )
 
 

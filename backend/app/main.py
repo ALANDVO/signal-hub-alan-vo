@@ -12,12 +12,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import health, issues
 from app.core.config import settings
+from app.models.database import init_db
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     # Startup
+    await init_db()
     yield
     # Shutdown
 

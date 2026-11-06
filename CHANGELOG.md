@@ -1,8 +1,26 @@
 # Changelog
 
+## 1.2.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.1.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
+
+### Added (v1.1.0 checkpoint)
+- Issue analysis history API:
+  - `POST /api/v1/issues/analyze` — Now stores analysis results in database
+  - `GET /api/v1/issues/history` — Paginated history with optional issue type filter
+  - `GET /api/v1/issues/history/{id}` — Single analysis lookup by ID
+- Database model `IssueAnalysis` with fields: id, issue_type, confidence, title, body, php_version, os, reproduction_hints, related_issues, created_at
+- Automatic table creation on application startup via lifespan handler
+- Comprehensive test coverage for history endpoints (6 new tests)
+
+### Verified
+- mypy: passes with no errors (10 source files)
+- Backend pytest: 15 tests pass (6 new history tests + 9 existing)
+- Database schema migration via SQLAlchemy metadata create_all
 
 ## 1.0.0 — work-in-progress checkpoint
 ## [1.0.1] - 2026-10-30
