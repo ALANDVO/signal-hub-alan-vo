@@ -85,3 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Authentication (Keycloak OIDC) not yet implemented — demo mode only
 - Reproduction runner and bisect automation planned for future releases
 - SQLite default for development; PostgreSQL required for production
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

@@ -54,3 +54,6 @@ Acceptance:
 - Output captured and returned
 - Security: non-root container, no network, read-only filesystem
 
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)

@@ -339,3 +339,7 @@ See [LICENSE](LICENSE) for full text.
 **signal-hub-alan-vo** — PHP Interpreter Issue Analysis Platform  
 Alan Vo | AI & Machine Learning  
 alanvo@gmail.com
+
+---
+
+Alan Vo · [alanvo.net](https://alanvo.net)
