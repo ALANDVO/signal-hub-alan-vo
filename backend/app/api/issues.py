@@ -10,6 +10,7 @@ from sqlalchemy import select, desc
 from sqlalchemy.orm import selectinload
 
 from app.models.database import get_db, IssueAnalysis as IssueAnalysisModel
+from app.services.llm import analyze_with_llm, LLMAnalysisResult
 
 router = APIRouter()
 
@@ -40,6 +41,24 @@ class IssueAnalysisResponse(BaseModel):
     reproduction_hints: List[str]
     related_issues: List[int]
 
+
+
+class IssueLLMAnalysisRequest(BaseModel):
+    """Request for LLM advisory analysis of a PHP issue."""
+    title: str
+    body: str
+    issue_type: str
+    confidence: float
+    php_version: Optional[str] = None
+    os: Optional[str] = None
+
+
+class IssueLLMAnalysisResponse(BaseModel):
+    """Response with LLM advisory analysis."""
+    advisory_text: str
+    disclaimer: str
+    model_used: str
+    provider: str
 
 @router.post("/issues/analyze", response_model=IssueAnalysisResponse, tags=["issues"])
 async def analyze_issue(request: IssueAnalysisRequest, db: AsyncSession = Depends(get_db)):
@@ -197,3 +216,31 @@ async def get_issue_history_by_id(
 async def list_issue_types():
     """List all known issue types."""
     return list(IssueType)
+@router.post("/issues/analyze-with-llm", response_model=IssueLLMAnalysisResponse, tags=["issues"])
+async def analyze_issue_with_llm(request: IssueLLMAnalysisRequest):
+    """
+    Analyze a PHP issue report with LLM advisory (opt-in).
+    
+    Requires LLM_API_KEY, LLM_MODEL, and optionally LLM_BASE_URL to be configured.
+    Returns advisory analysis with mandatory disclaimer.
+    """
+    try:
+        result = await analyze_with_llm(
+            title=request.title,
+            body=request.body,
+            issue_type=request.issue_type,
+            confidence=request.confidence,
+            php_version=request.php_version,
+            os=request.os,
+        )
+        
+        return IssueLLMAnalysisResponse(
+            advisory_text=result.advisory_text,
+            disclaimer=result.disclaimer,
+            model_used=result.model_used,
+            provider=result.provider,
+        )
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"LLM analysis failed: {str(e)}")
