@@ -1,12 +1,29 @@
 # Changelog
 
+## 1.3.0 — work-in-progress checkpoint
+
+Partial code published for continued development. Known issues: STATUS.md.
+
 ## 1.2.0 — work-in-progress checkpoint
 
 Partial code published for continued development. Known issues: STATUS.md.
 
-## 1.1.0 — work-in-progress checkpoint
+### Added (v1.2.0 checkpoint)
+- Opt-in LLM advisory analysis for PHP issues:
+  - `POST /api/v1/issues/analyze-with-llm` — New endpoint for LLM-assisted root cause analysis
+  - Returns advisory text with mandatory disclaimer (never fabricates successful responses)
+  - Provider errors surface cleanly (503 when not configured, 500 on provider failure)
+  - Configurable via `LLM_API_KEY`, `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`
+  - Supports OpenAI-compatible providers (OpenAI, Ollama, LM Studio, etc.) and mock provider for testing
+- New service module `backend/app/services/llm.py` with abstract provider interface
+- New request/response models: `IssueLLMAnalysisRequest`, `IssueLLMAnalysisResponse`
 
-Partial code published for continued development. Known issues: STATUS.md.
+### Verified
+- mypy: passes with no errors (11 source files)
+- Backend pytest: 15 tests pass
+- Manual API testing: endpoint returns mock analysis with disclaimer when `LLM_PROVIDER=mock`
+- Error handling: returns 503 with clear message when LLM not configured
+
 
 ### Added (v1.1.0 checkpoint)
 - Issue analysis history API:

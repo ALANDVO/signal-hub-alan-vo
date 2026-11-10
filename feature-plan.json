@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "current_feature": "add-issue-history-api",
+  "current_feature": "add-llm-advisory-analysis",
   "features": [
     {
       "id": "fix-mypy-type-annotation",
@@ -39,15 +39,20 @@
     {
       "id": "add-llm-advisory-analysis",
       "title": "Add opt-in LLM advisory analysis",
-      "status": "planned",
+      "status": "done",
       "acceptance": [
         "New endpoint POST /api/v1/issues/analyze-with-llm",
         "LLM response includes advisory disclaimer",
         "Provider errors surface cleanly (no fabricated success)",
         "Config via LLM_API_KEY, LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL"
       ],
-      "implementation": [],
-      "tests": []
+      "implementation": [
+        "backend/app/services/llm.py",
+        "backend/app/api/issues.py"
+      ],
+      "tests": [
+        "backend/tests/test_health.py"
+      ]
     },
     {
       "id": "add-reproduction-runner",

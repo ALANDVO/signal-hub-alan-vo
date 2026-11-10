@@ -4,7 +4,7 @@ Each round completes one feature or repair. Future items are planned, not implem
 
 ## Current round
 
-add-issue-history-api
+add-llm-advisory-analysis
 
 ## Roadmap
 
@@ -36,13 +36,17 @@ Tests: `backend/tests/test_health.py`
 
 ### add-llm-advisory-analysis — Add opt-in LLM advisory analysis
 
-Status: planned
+Status: done
 
 Acceptance:
 - New endpoint POST /api/v1/issues/analyze-with-llm
 - LLM response includes advisory disclaimer
 - Provider errors surface cleanly (no fabricated success)
 - Config via LLM_API_KEY, LLM_PROVIDER, LLM_MODEL, LLM_BASE_URL
+
+Implementation: `backend/app/services/llm.py`, `backend/app/api/issues.py`
+
+Tests: `backend/tests/test_health.py`
 
 ### add-reproduction-runner — Add automated reproduction runner
 
