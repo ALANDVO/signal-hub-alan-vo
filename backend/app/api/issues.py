@@ -11,6 +11,8 @@ from sqlalchemy.orm import selectinload
 
 from app.models.database import get_db, IssueAnalysis as IssueAnalysisModel
 from app.services.llm import analyze_with_llm, LLMAnalysisResult
+from app.services.reproduction_runner import ReproductionRunner, ReproductionResult
+from app.api.reproduction_runner import ReproductionRunRequest, ReproductionRunResponse
 
 router = APIRouter()
 
@@ -244,3 +246,34 @@ async def analyze_issue_with_llm(request: IssueLLMAnalysisRequest):
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"LLM analysis failed: {str(e)}")
+
+# Reproduction runner endpoint
+@router.post("/reproduction/run", response_model=ReproductionRunResponse, tags=["reproduction"])
+async def run_reproduction(request: ReproductionRunRequest):
+    """
+    Run PHP code in sandbox for reproduction verification.
+    
+    Executes the provided PHP code with enforced timeout and memory limits.
+    Output is captured and returned for debugging and testing purposes.
+    
+    Security:
+    - Executed in sandbox context with resource limits
+    - No network access (subprocess isolation)
+    - Read-only filesystem via tempfile (no persistent writes)
+    - Timeout enforcement prevents hanging executions
+    """
+    reproduction_runner = ReproductionRunner()
+    result = reproduction_runner.run_reproduction(
+        code=request.code,
+        timeout_override=request.timeout,
+        memory_override=request.memory_limit,
+    )
+    
+    return ReproductionRunResponse(
+        stdout=result.stdout,
+        stderr=result.stderr,
+        exit_code=result.exit_code,
+        execution_time=result.execution_time,
+        timed_out=result.timed_out,
+        sandbox_error=result.sandbox_error,
+    )
