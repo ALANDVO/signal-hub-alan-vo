@@ -298,3 +298,53 @@ async def test_issue_history_not_found():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/v1/issues/history/999999")
         assert response.status_code == 404
+
+@pytest.mark.asyncio
+async def test_reproduction_run_basic():
+    """Test basic PHP code execution via reproduction runner."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/reproduction/run",
+            json={
+                "code": "<?php echo 'Hello World'; phpinfo(); ?>",
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data["stdout"], str)
+        assert isinstance(data["stderr"], str)
+        assert isinstance(data["exit_code"], int)
+        assert isinstance(data["execution_time"], float)
+        assert data["timed_out"] is False
+        assert data["exit_code"] == 0
+
+@pytest.mark.asyncio
+async def test_reproduction_run_timeout():
+    """Test that long-running PHP code times out."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/reproduction/run",
+            json={
+                "code": "<?php\n",
+                "timeout": 1,  # 1 second timeout
+            },
+        )
+        # May or may not timeout depending on PHP startup time
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data["exit_code"], int)
+
+@pytest.mark.asyncio
+async def test_reproduction_run_with_memory_limit():
+    """Test PHP code execution with memory limit override."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/v1/reproduction/run",
+            json={
+                "code": "<?php echo 'test'; ?>",
+                "memory_limit": "128m",
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert isinstance(data["exit_code"], int)

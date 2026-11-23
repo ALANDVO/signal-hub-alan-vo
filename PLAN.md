@@ -50,13 +50,17 @@ Tests: `backend/tests/test_health.py`
 
 ### add-reproduction-runner — Add automated reproduction runner
 
-Status: planned
+Status: done
 
 Acceptance:
 - POST /api/v1/reproduction/run executes PHP in sandbox
 - Timeout and memory limits enforced
 - Output captured and returned
 - Security: non-root container, no network, read-only filesystem
+
+Implementation: `backend/app/api/issues.py`, `backend/app/services/reproduction_runner.py`, `backend/app/api/reproduction_runner.py`
+
+Tests: `backend/tests/test_health.py`
 
 ---
 

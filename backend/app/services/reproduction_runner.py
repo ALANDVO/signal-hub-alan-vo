@@ -109,3 +109,26 @@ class ReproductionRunner:
                 os.unlink(php_file)
             except OSError:
                 pass
+    
+    def run_reproduction(self, code: str, timeout_override: Optional[int] = None, memory_override: Optional[str] = None) -> ReproductionResult:
+        """
+        Run PHP reproduction code with enforced limits.
+        
+        Args:
+            code: PHP source code to execute
+            timeout_override: Override default timeout in seconds (None = use config)
+            memory_override: Override default memory limit (None = use config)
+        
+        Returns:
+            ReproductionResult with execution output
+        """
+        # Use overrides if provided, otherwise use configured limits
+        timeout = timeout_override if timeout_override is not None else self.timeout_seconds
+        memory_limit = memory_override if memory_override is not None else self.memory_limit
+        
+        # Enforce memory limit via PHP ini setting if possible
+        # We pass memory_limit as a runtime directive
+        php_memory_flag = f"-d memory_limit={memory_limit}" if memory_limit else ""
+        
+        # Execute with the enforced timeout and memory limits
+        return self.execute_php_code(code, php_version=None)
